@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
-#include "functions.h"
+// TODO: Change this line to "function.h" once you figure how to compile
+#include "functions.c"
+
+// TODO: Make a Makefile for the project 
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +46,7 @@ void printLoad(int max)
 	int i;
 	for(i=0;i<max;i++)
 		printf("%d\n",instmem[i]);
+    return;
 }
 
 /* print

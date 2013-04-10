@@ -4,6 +4,9 @@
 #include <strings.h>
 #include "functions.h"
 
+#define LINESIZE 11     // Max size of an input line
+
+
 // these are the structures used in this simulator
 
 
@@ -30,8 +33,21 @@ int pc;
  */
 int load(char *filename)
 {
+    FILE *fin = fopen(filename, "r");
+    char *line = NULL;
+    int c, maxpc;
 
-	return 0;
+    for (maxpc = 0, c = getc(fin); c != EOF; maxpc++, c = getc(fin)) {
+        char line[LINESIZE + 1];
+        int i;
+        for (i = 0; i < LINESIZE && c != '\n'; i++, c = getc(fin)) {
+            line[i] = c;
+        }
+        line[i] = '\0';
+
+        instmem[maxpc] = atoi(line);
+    }
+	return maxpc;
 }
 
 /* fetch

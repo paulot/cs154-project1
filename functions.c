@@ -48,7 +48,7 @@ int load(char *filename)
         instmem[maxpc] = atoi(line);
     }
     fclose(fin);
-	return maxpc;
+	return maxpc - 1;
 }
 
 /* fetch

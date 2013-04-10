@@ -79,6 +79,7 @@ void decode(InstInfo *instruction)
 	instruction->fields.op = (val >> 26) & 0x03f;
 	// fill in the rest of the fields here
 
+    printf("AAAAAAAA : pc: %d, op: %d\n", pc, instruction->fields.op);
 	// now fill in the signals
 
 	// if it is an add

@@ -47,6 +47,7 @@ int load(char *filename)
 
         instmem[maxpc] = atoi(line);
     }
+    fclose(fin);
 	return maxpc;
 }
 
@@ -57,6 +58,8 @@ int load(char *filename)
  */
 void fetch(InstInfo *instruction)
 {
+    instruction->inst = instmem[pc];        // Fill in the inst field
+    pc++;                                   // Update the program counter
 }
 
 /* decode

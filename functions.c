@@ -78,18 +78,31 @@ void decode(InstInfo *instruction)
 	int op, func;
 	instruction->fields.op = (val >> 26) & 0x03f;
 	// fill in the rest of the fields here
-
-    printf("AAAAAAAA : pc: %d, op: %d\n", pc, instruction->fields.op);
+	instruction->fields.func = val & 0x03f;		
+	if (instruction->fields.op == 48) {
+		instruction->fields.rd = (val >> 11) &  0x01f;
+		instruction->fields.imm = 0;
+	} else if (instruction->fields.func == 36 || instruction->fields.func == 34) { 
+		instruction->fields.imm = val & 0x03ffffff;
+	} else {
+		instruction->fields.imm = val & 0x0ffff;
+	}
+	if (instruction->fields.func != 36 && instruction->fields.func != 34) {
+		instruction->fields.rs = (val >> 21) & 0x01f;
+		instruction->fields.rt = (val >> 16) & 0x01f;
+	} 
+		
+	
 	// now fill in the signals
-
-	// if it is an add
+	//add
+	if (instruction->fields.func == 10)
 	{
-		instruction->signals.aluop = 1;
+		instruction->signals.aluop = 001;
 		instruction->signals.mw = 0;
 		instruction->signals.mr = 0;
 		instruction->signals.mtr = 0;
 		instruction->signals.asrc = 0;
-		instruction->signals.btype = 0;
+		instruction->signals.btype = 00;
 		instruction->signals.rdst = 1;
 		instruction->signals.rw = 1;
 		sprintf(instruction->string,"add $%d, $%d, $%d",
@@ -97,7 +110,118 @@ void decode(InstInfo *instruction)
 			instruction->fields.rt);
 		instruction->destreg = instruction->fields.rd;
 	}
-
+	//subi
+	if (instruction->fields.op == 28)
+	{
+		instruction->signals.aluop = 101;
+		instruction->signals.mw = 0;
+		instruction->signals.mr = 0;
+		instruction->signals.mtr = 0;
+		instruction->signals.asrc = 1;
+		instruction->signals.btype = 00;
+		instruction->signals.rdst = 0;
+		instruction->signals.rw = 1;
+		sprintf(instruction->string,"subi $%d, $%d, $%d",
+			instruction->fields.rt, instruction->fields.rs, 
+			instruction->fields.imm);
+		instruction->destreg = instruction->fields.rt;
+	}
+	//or
+	if (instruction->fields.func == 48)
+	{
+		instruction->signals.aluop = 100;
+		instruction->signals.mw = 0;
+		instruction->signals.mr = 0;
+		instruction->signals.mtr = 0;
+		instruction->signals.asrc = 0;
+		instruction->signals.btype = 00;
+		instruction->signals.rdst = 1;
+		instruction->signals.rw = 1;
+		sprintf(instruction->string,"or $%d, $%d, $%d",
+			instruction->fields.rd, instruction->fields.rs, 
+			instruction->fields.rt);
+		instruction->destreg = instruction->fields.rd;
+	}
+	//xor
+	if (instruction->fields.func == 20)
+	{
+		instruction->signals.aluop = 011;
+		instruction->signals.mw = 0;
+		instruction->signals.mr = 0;
+		instruction->signals.mtr = 0;
+		instruction->signals.asrc = 0;
+		instruction->signals.btype = 00;
+		instruction->signals.rdst = 1;
+		instruction->signals.rw = 1;
+		sprintf(instruction->string,"xor $%d, $%d, $%d",
+			instruction->fields.rd, instruction->fields.rs, 
+			instruction->fields.rt);
+		instruction->destreg = instruction->fields.rd;
+	}
+	//slt
+	if (instruction->fields.func == 15 && instruction->fields.op == 48)
+	{
+		instruction->signals.aluop = 110;
+		instruction->signals.mw = 0;
+		instruction->signals.mr = 0;
+		instruction->signals.mtr = 0;
+		instruction->signals.asrc = 0;
+		instruction->signals.btype = 00;
+		instruction->signals.rdst = 1;
+		instruction->signals.rw = 1;
+		sprintf(instruction->string,"slt $%d, $%d, $%d",
+			instruction->fields.rd, instruction->fields.rs, 
+			instruction->fields.rt);
+		instruction->destreg = instruction->fields.rd;
+	}
+	//lw
+	if (instruction->fields.op == 6)
+	{
+		instruction->signals.aluop = 001;
+		instruction->signals.mw = 0;
+		instruction->signals.mr = 1;
+		instruction->signals.mtr = 1;
+		instruction->signals.asrc = 1;
+		instruction->signals.btype = 00;
+		instruction->signals.rdst =-1;
+		instruction->signals.rw = 0;
+		sprintf(instruction->string,"lw $%d, %d($%d)",
+			instruction->fields.rt, instruction->fields.imm, 
+			instruction->fields.rs);
+		instruction->destreg = instruction->fields.rt;
+	}
+	//sw
+	if (instruction->fields.op == 2)
+	{
+		instruction->signals.aluop = 001;
+		instruction->signals.mw = 1;
+		instruction->signals.mr = -1;
+		instruction->signals.mtr = 0;
+		instruction->signals.asrc = 1;
+		instruction->signals.btype = 00;
+		instruction->signals.rdst =-1;
+		instruction->signals.rw = 0;
+		sprintf(instruction->string,"sw $%d, %d($%d)",
+			instruction->fields.rt, instruction->fields.imm, 
+			instruction->fields.rs);
+		instruction->destreg = instruction->fields.rt;
+	}
+	//bge	
+	if (instruction->fields.op == 39)
+	{
+		instruction->signals.aluop = 101;
+		instruction->signals.mw = 0;
+		instruction->signals.mr = -1;
+		instruction->signals.mtr = 0;
+		instruction->signals.asrc = 0;
+		instruction->signals.btype = 10;
+		instruction->signals.rdst =-1;
+		instruction->signals.rw = 0;
+		sprintf(instruction->string,"bge $%d, %d, $%d",
+			instruction->fields.rs, instruction->fields.rt, 
+			instruction->fields.imm);
+		instruction->destreg = instruction->fields.rt;
+	}
 
 	// fill in s1data and input2
 }

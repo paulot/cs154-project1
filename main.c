@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
-// TODO: Change this line to "function.h" once you figure how to compile
 #include "functions.c"
 
 // TODO: Make a Makefile for the project 
@@ -58,7 +57,7 @@ void print(InstInfo *inst, int count)
 	int i, j;
 	printf("Instruction %d: %d\n",count,inst->inst);
 	printf("%s\n\n",inst->string);
-	printf("Fields:\n rd: %d\nrs: %d\nrt: %d\nimm: %d\n\n",
+	printf("Fields:\nrd: %d\nrs: %d\nrt: %d\nimm: %d\n\n",
 		inst->fields.rd, inst->fields.rs, inst->fields.rt, inst->fields.imm);
 	printf("Control Bits:\nalu: %d\nmw: %d\nmr: %d\nmtr: %d\nasrc: %d\nbt: %d\nrdst: %d\nrw: %d\n\n",
 		inst->signals.aluop, inst->signals.mw, inst->signals.mr, inst->signals.mtr, inst->signals.asrc,

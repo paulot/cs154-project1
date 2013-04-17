@@ -303,7 +303,7 @@ void execute(InstInfo *instruction)
     switch (instruction->signals.aluop) {
         case INV:
 	    printf("PC1 = %d\n", pc);
-	    pc += instruction->fields.imm;
+	    pc += instruction->aluout;
 	    printf("PC = %d\n", pc);
             break;      // Don't do anything
         case AND:

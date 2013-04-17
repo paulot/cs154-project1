@@ -335,7 +335,7 @@ void execute(InstInfo *instruction)
 void memory(InstInfo *instruction)
 {
 	if (is_lw || is_sw) {
-		instruction->memout = datamem[regfile[instruction->fields.rs] + instruction->fields.imm];
+		instruction->memout = datamem[instruction->aluout];
 	} 
 			
 }

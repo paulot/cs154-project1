@@ -148,7 +148,7 @@ void decode(InstInfo *instruction)
 
 	// now fill in the signals
 	if (is_add) {           // add
-		instruction->signals.aluop  = ADD   ;
+		instruction->signals.aluop  = ADD;
 		instruction->signals.mw     = 0;
 		instruction->signals.mr     = 0;
 		instruction->signals.mtr    = 0;
@@ -301,6 +301,8 @@ void execute(InstInfo *instruction)
                                                      instruction->s2data;
     switch (instruction->signals.aluop) {
         case INV:
+	    pc += instruction->targetreg;
+	    printf("PC = %d\n", pc);
             break;      // Don't do anything
         case AND:
             instruction->aluout = in1 & in2;

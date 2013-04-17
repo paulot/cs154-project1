@@ -348,23 +348,12 @@ void writeback(InstInfo *instruction)
 {
 	if (getFormat(instruction) == R_format) {  
 		instruction->destdata = instruction->aluout;
-		if (is_add) {
-			regfile[instruction->fields.rd] = regfile[instruction->fields.rs] + regfile[instruction->fields.rt];	
+		regfile[instruction->fields.rd] = instruction->aluout;	
 		}	
-		if (is_or) {
-			regfile[instruction->destreg] = regfile[instruction->fields.rs] | regfile[instruction->fields.rt];	
-		}
-		if (is_xor) {
-			regfile[instruction->destreg] = regfile[instruction->fields.rs] ^ regfile[instruction->fields.rt];	
-		}	
-		if (is_slt) {
-			regfile[instruction->destreg] = regfile[instruction->fields.rs] < regfile[instruction->fields.rt];	
-		}
-	}
 	else if (getFormat(instruction) == I_format) {
 		if (is_subi) {
 			instruction->destdata = instruction->aluout;			
-			regfile[instruction->fields.rt] = regfile[instruction->fields.rs] - instruction->fields.imm;	
+			regfile[instruction->fields.rt] = instruction->aluout;	
 		}
 		if (is_lw) {
 			instruction->destdata = instruction->memout;

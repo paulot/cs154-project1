@@ -281,6 +281,7 @@ void decode(InstInfo *instruction)
         case (I_format) :
             instruction->input1  = instruction->fields.rs;
             instruction->s1data  = regfile[instruction->fields.rs];
+            instruction->s2data  = regfile[instruction->fields.rt];
             instruction->destreg = instruction->fields.rt;
             // printf("I FORMAT\n");
             break;
@@ -347,10 +348,9 @@ void memory(InstInfo *instruction)
 	}
     
     // Does the instruction write memory?
-    //if (instruction->signals.mw == 1) {
-    //    datamem[
-
-			
+    if (instruction->signals.mw == 1) {
+        datamem[instruction->aluout] = instruction->s2data;
+    }
 }
 
 /* writeback
@@ -359,18 +359,12 @@ void memory(InstInfo *instruction)
  */
 void writeback(InstInfo *instruction)
 {
+    instruction->destreg = (instruction->signals.rdst == 1) ? instruction->fields.rd :
+                            (instruction->signals.rdst == 0) ? instruction->fields.rt :
+                              -1;
     if (instruction->signals.rw) {  // Register is supposeed to be written
-        regfile[instruction->fields.rd] = instruction->aluout;
+        if (instruction->destreg == -1) printf("ERROR in the simulator!\n"), exit(-1); // Total comma hack
+        regfile[instruction->destreg] = instruction->aluout;
     }
-
-    /*
-	else if (is_jal) {
-		instruction->destreg = 31;
-		regfile[31] = pc++;
-	} else { //instructions that don't write to reg's
-		instruction->destreg = -1; //??? 	
-	
-	}
-    */
 }
 	

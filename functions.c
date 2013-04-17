@@ -144,7 +144,7 @@ void decode(InstInfo *instruction)
         // Instruction is of the J-Format
 		instruction->fields.rs  = -1;
 		instruction->fields.rt  = -1;
-    }
+    	}
 
 	// now fill in the signals
 	if (is_add) {           // add
@@ -254,7 +254,7 @@ void decode(InstInfo *instruction)
         instruction->signals.rw     = 0;
         sprintf(instruction->string,"j %d",
                 instruction->fields.imm);
-    } else if (is_jal) {    // jal
+    	} else if (is_jal) {    // jal
         instruction->signals.aluop  = INV;
         instruction->signals.mw     = 0;
         instruction->signals.mr     = -1;
@@ -265,7 +265,7 @@ void decode(InstInfo *instruction)
         instruction->signals.rw     = 1;
         sprintf(instruction->string,"jal %d",
                 instruction->fields.imm);
-    }
+    	}
 
 	// fill in s1data and input2
     // Set the data up for executing
@@ -281,6 +281,7 @@ void decode(InstInfo *instruction)
         case (I_format) :
             instruction->input1  = instruction->fields.rs;
             instruction->s1data  = regfile[instruction->fields.rs];
+            instruction->s2data  = regfile[instruction->fields.rt];
             instruction->destreg = instruction->fields.rt;
             // printf("I FORMAT\n");
             break;
@@ -301,7 +302,8 @@ void execute(InstInfo *instruction)
                                                      instruction->s2data;
     switch (instruction->signals.aluop) {
         case INV:
-	    pc += instruction->targetreg;
+	    printf("PC1 = %d\n", pc);
+	    pc += instruction->fields.imm;
 	    printf("PC = %d\n", pc);
             break;      // Don't do anything
         case AND:
@@ -349,10 +351,9 @@ void memory(InstInfo *instruction)
 	}
     
     // Does the instruction write memory?
-    //if (instruction->signals.mw == 1) {
-    //    datamem[
-
-			
+    if (instruction->signals.mw == 1) {
+        datamem[instruction->aluout] = instruction->s2data;
+    }
 }
 
 /* writeback
@@ -361,12 +362,15 @@ void memory(InstInfo *instruction)
  */
 void writeback(InstInfo *instruction)
 {
+    instruction->destreg = (instruction->signals.rdst == 1) ? instruction->fields.rd :
+                            (instruction->signals.rdst == 0) ? instruction->fields.rt :
+                              -1;
     if (instruction->signals.rw) {  // Register is supposeed to be written
-        regfile[instruction->fields.rd] = instruction->aluout;
+        if (instruction->destreg == -1) printf("ERROR in the simulator!\n"), exit(-1); // Total comma hack
+        regfile[instruction->destreg] = instruction->aluout;
     }
 
     /*
-	else if (is_jal) {
 		instruction->destreg = 31;
 		regfile[31] = pc++;
 	} else { //instructions that don't write to reg's

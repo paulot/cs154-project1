@@ -271,17 +271,17 @@ void decode(InstInfo *instruction)
     // Set the data up for executing
     switch (getFormat(instruction)) {
         case (R_format) :
-            instruction->input1  = instruction->fields.rt;
-            instruction->s1data  = regfile[instruction->fields.rt];
-            instruction->input2  = instruction->fields.rd;
-            instruction->s2data  = regfile[instruction->fields.rd];
-            instruction->destreg = instruction->fields.rs;
+            instruction->input1  = instruction->fields.rs;
+            instruction->s1data  = regfile[instruction->fields.rs];
+            instruction->input2  = instruction->fields.rt;
+            instruction->s2data  = regfile[instruction->fields.rt];
+            instruction->destreg = instruction->fields.rd;
             // printf("R FORMAT\n");
             break;
         case (I_format) :
-            instruction->input1  = instruction->fields.rt;
-            instruction->s1data  = regfile[instruction->fields.rt];
-            instruction->destreg = instruction->fields.rs;
+            instruction->input1  = instruction->fields.rs;
+            instruction->s1data  = regfile[instruction->fields.rs];
+            instruction->destreg = instruction->fields.rt;
             // printf("I FORMAT\n");
             break;
 
@@ -296,9 +296,6 @@ void decode(InstInfo *instruction)
 
 void execute(InstInfo *instruction)
 {
-<<<<<<< HEAD
-	
-=======
     int in1 = instruction->s1data;
     int in2 = (getFormat(instruction) == I_format) ? instruction->fields.imm : 
                                                      instruction->s2data;
@@ -319,16 +316,16 @@ void execute(InstInfo *instruction)
             instruction->aluout = in1 - in2;
             break;
         case NOT:
-            instruction->aluout = ! in1; // TODO: Check correctness
+            instruction->aluout = ~in1; // Changed from !in1
             break;
         case XOR:
             instruction->aluout = in1 ^ in2;
             break;
         case SLT:
             instruction->aluout = in1 < in2;
-            break;
+            break; 
     }
->>>>>>> ed462131839cfdd3740a3e43f429477f0bd77be1
+
 }
 
 /* memory
@@ -337,7 +334,10 @@ void execute(InstInfo *instruction)
  */
 void memory(InstInfo *instruction)
 {
-	
+	if (is_lw || is_sw) {
+		instruction->memout = datamem[regfile[instruction->fields.rs] + instruction->fields.imm];
+	} 
+			
 }
 
 /* writeback
@@ -346,30 +346,37 @@ void memory(InstInfo *instruction)
  */
 void writeback(InstInfo *instruction)
 {
-	if (is_add) {
-		regfile[instruction->fields.rd] = regfile[instruction->fields.rs] + regfile[instruction->fields.rt];	
+	if (getFormat(instruction) == R_format) {  
+		instruction->destdata = instruction->aluout;
+		if (is_add) {
+			regfile[instruction->fields.rd] = regfile[instruction->fields.rs] + regfile[instruction->fields.rt];	
+		}	
+		if (is_or) {
+			regfile[instruction->destreg] = regfile[instruction->fields.rs] | regfile[instruction->fields.rt];	
+		}
+		if (is_xor) {
+			regfile[instruction->destreg] = regfile[instruction->fields.rs] ^ regfile[instruction->fields.rt];	
+		}	
+		if (is_slt) {
+			regfile[instruction->destreg] = regfile[instruction->fields.rs] < regfile[instruction->fields.rt];	
+		}
 	}
-	else if (is_subi) {			
-		regfile[instruction->fields.rt] = regfile[instruction->fields.rs] - instruction->fields.imm;	
-	}
-	else if (is_or) {
-		regfile[instruction->destreg] = regfile[instruction->fields.rs] | regfile[instruction->fields.rt];	
-	}
-	else if (is_xor) {
-		regfile[instruction->destreg] = regfile[instruction->fields.rs] ^ regfile[instruction->fields.rt];	
-	}
-	else if (is_slt) {
-		regfile[instruction->destreg] = regfile[instruction->fields.rs] < regfile[instruction->fields.rt];	
-	}
-	else if (is_lw) {
-		instruction->destreg = instruction->fields.rt;
-		regfile[instruction->destreg] = datamem[regfile[instruction->fields.rs] + instruction->fields.imm];
+	else if (getFormat(instruction) == I_format) {
+		if (is_subi) {
+			instruction->destdata = instruction->aluout;			
+			regfile[instruction->fields.rt] = regfile[instruction->fields.rs] - instruction->fields.imm;	
+		}
+		if (is_lw) {
+			instruction->destdata = instruction->memout;
+			instruction->destreg = instruction->fields.rt;
+			regfile[instruction->destreg] = instruction->memout;
+		}
 	}
 	else if (is_jal) {
 		instruction->destreg = 31;
 		regfile[31] = pc++;
 	} else { //instructions that don't write to reg's
-		instruction->destreg = -1;	 	
+		instruction->destreg = -1; //??? 	
 	
 	}
 

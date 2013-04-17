@@ -304,27 +304,34 @@ void execute(InstInfo *instruction)
             break;      // Don't do anything
         case AND:
             instruction->aluout = in1 & in2;
-            //printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
+            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case OR:
             instruction->aluout = in1 | in2;
+            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case ADD:
             instruction->aluout = in1 + in2;
+            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case SUB:
             instruction->aluout = in1 - in2;
+            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case NOT:
             instruction->aluout = ~in1; // Changed from !in1
+            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case XOR:
             instruction->aluout = in1 ^ in2;
+            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case SLT:
             instruction->aluout = in1 < in2;
+            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break; 
     }
+    instruction->destdata = instruction->aluout;
 
 }
 
@@ -334,9 +341,15 @@ void execute(InstInfo *instruction)
  */
 void memory(InstInfo *instruction)
 {
-	if (is_lw || is_sw) {
+    // Does the instruction read memory?
+    if (instruction->signals.mr == 1) {
 		instruction->memout = datamem[instruction->aluout];
-	} 
+	}
+    
+    // Does the instruction write memory?
+    //if (instruction->signals.mw == 1) {
+    //    datamem[
+
 			
 }
 
@@ -346,32 +359,11 @@ void memory(InstInfo *instruction)
  */
 void writeback(InstInfo *instruction)
 {
-	if (getFormat(instruction) == R_format) {  
-		instruction->destdata = instruction->aluout;
-		if (is_add) {
-			regfile[instruction->fields.rd] = regfile[instruction->fields.rs] + regfile[instruction->fields.rt];	
-		}	
-		if (is_or) {
-			regfile[instruction->destreg] = regfile[instruction->fields.rs] | regfile[instruction->fields.rt];	
-		}
-		if (is_xor) {
-			regfile[instruction->destreg] = regfile[instruction->fields.rs] ^ regfile[instruction->fields.rt];	
-		}	
-		if (is_slt) {
-			regfile[instruction->destreg] = regfile[instruction->fields.rs] < regfile[instruction->fields.rt];	
-		}
-	}
-	else if (getFormat(instruction) == I_format) {
-		if (is_subi) {
-			instruction->destdata = instruction->aluout;			
-			regfile[instruction->fields.rt] = regfile[instruction->fields.rs] - instruction->fields.imm;	
-		}
-		if (is_lw) {
-			instruction->destdata = instruction->memout;
-			instruction->destreg = instruction->fields.rt;
-			regfile[instruction->destreg] = instruction->memout;
-		}
-	}
+    if (instruction->signals.rw) {  // Register is supposeed to be written
+        regfile[instruction->fields.rd] = instruction->aluout;
+    }
+
+    /*
 	else if (is_jal) {
 		instruction->destreg = 31;
 		regfile[31] = pc++;
@@ -379,6 +371,6 @@ void writeback(InstInfo *instruction)
 		instruction->destreg = -1; //??? 	
 	
 	}
-
+    */
 }
 	

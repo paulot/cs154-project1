@@ -366,5 +366,14 @@ void writeback(InstInfo *instruction)
         if (instruction->destreg == -1) printf("ERROR in the simulator!\n"), exit(-1); // Total comma hack
         regfile[instruction->destreg] = instruction->aluout;
     }
+
+    /*
+		instruction->destreg = 31;
+		regfile[31] = pc++;
+	} else { //instructions that don't write to reg's
+		instruction->destreg = -1; //??? 	
+	
+	}
+    */
 }
 	

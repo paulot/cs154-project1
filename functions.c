@@ -31,6 +31,16 @@ int datamem[1000];
 int pc;
 
 typedef enum { R_format = 1, I_format = 2, J_format = 3 } InstFormat;
+// 000 = and, 100 = or, 001 = add, 101 = sub, 010 = not, 011 = xor, 110 = slt
+typedef enum {  INV = -1 ,
+                AND = 000,
+                ADD = 001,
+                NOT = 010,
+                XOR = 011,
+                OR  = 100,
+                SUB = 101,
+                SLT = 110          
+             } ALUOps;
 
 // Returns the format of the given instruction
 // Note that the unused registers in the instruction
@@ -42,6 +52,7 @@ InstFormat getFormat (InstInfo *instruction) {
                 return R_format;
             else
                 return I_format;
+        
         } else {
             // The setting up of the registers has failed, either the opcode is very wrong or the simulator is incorrect
             fprintf(stderr, "ERROR: Invalid Instruction %d\n", instruction->inst);
@@ -137,7 +148,7 @@ void decode(InstInfo *instruction)
 
 	// now fill in the signals
 	if (is_add) {           // add
-		instruction->signals.aluop  = 001;
+		instruction->signals.aluop  = ADD   ;
 		instruction->signals.mw     = 0;
 		instruction->signals.mr     = 0;
 		instruction->signals.mtr    = 0;
@@ -149,7 +160,7 @@ void decode(InstInfo *instruction)
 			instruction->fields.rd, instruction->fields.rs, 
 			instruction->fields.rt);
 	} else if (is_subi)	{   // subi
-		instruction->signals.aluop  = 101;
+		instruction->signals.aluop  = SUB;
 		instruction->signals.mw     = 0;
 		instruction->signals.mr     = 0;
 		instruction->signals.mtr    = 0;
@@ -157,11 +168,11 @@ void decode(InstInfo *instruction)
 		instruction->signals.btype  = 00;
 		instruction->signals.rdst   = 0;
 		instruction->signals.rw     = 1;
-		sprintf(instruction->string,"subi $%d, $%d, $%d",
+		sprintf(instruction->string,"subi $%d, $%d,  %d",
 			instruction->fields.rt, instruction->fields.rs, 
 			instruction->fields.imm);
 	} else if (is_or) {     // or
-		instruction->signals.aluop  = 100;
+		instruction->signals.aluop  = OR;
 		instruction->signals.mw     = 0;
 		instruction->signals.mr     = 0;
 		instruction->signals.mtr    = 0;
@@ -173,7 +184,7 @@ void decode(InstInfo *instruction)
 			instruction->fields.rd, instruction->fields.rs, 
 			instruction->fields.rt);
 	} else if (is_xor) {    // xor
-		instruction->signals.aluop  = 011;
+		instruction->signals.aluop  = XOR;
 		instruction->signals.mw     = 0;
 		instruction->signals.mr     = 0;
 		instruction->signals.mtr    = 0;
@@ -185,7 +196,7 @@ void decode(InstInfo *instruction)
 			instruction->fields.rd, instruction->fields.rs, 
 			instruction->fields.rt);
 	} else if (is_slt) {    // slt
-		instruction->signals.aluop  = 110;
+		instruction->signals.aluop  = SLT;
 		instruction->signals.mw     = 0;
 		instruction->signals.mr     = 0;
 		instruction->signals.mtr    = 0;
@@ -197,7 +208,7 @@ void decode(InstInfo *instruction)
 			instruction->fields.rd, instruction->fields.rs, 
 			instruction->fields.rt);
 	} else if (is_lw) {     // lw
-		instruction->signals.aluop  = 001;
+		instruction->signals.aluop  = ADD;
 		instruction->signals.mw     = 0;
 		instruction->signals.mr     = 1;
 		instruction->signals.mtr    = 1;
@@ -209,7 +220,7 @@ void decode(InstInfo *instruction)
 			instruction->fields.rt, instruction->fields.imm, 
 			instruction->fields.rs);
 	} else if (is_sw) { 	// sw
-		instruction->signals.aluop  = 001;
+		instruction->signals.aluop  = ADD;
 		instruction->signals.mw     = 1;
 		instruction->signals.mr     = -1;
 		instruction->signals.mtr    = 0;
@@ -221,7 +232,7 @@ void decode(InstInfo *instruction)
 			instruction->fields.rt, instruction->fields.imm, 
 			instruction->fields.rs);
 	} else if (is_bge) {    // bge
-		instruction->signals.aluop  = 101;
+		instruction->signals.aluop  = SUB;
 		instruction->signals.mw     = 0;
 		instruction->signals.mr     = -1;
 		instruction->signals.mtr    = 0;
@@ -233,7 +244,7 @@ void decode(InstInfo *instruction)
 			instruction->fields.rs, instruction->fields.rt, 
 			instruction->fields.imm);
 	} else if (is_j) {      // j
-        instruction->signals.aluop  = -1;
+        instruction->signals.aluop  = INV;
         instruction->signals.mw     = 0;
         instruction->signals.mr     = -1;
         instruction->signals.mtr    = 0;
@@ -244,7 +255,7 @@ void decode(InstInfo *instruction)
         sprintf(instruction->string,"j %d",
                 instruction->fields.imm);
     } else if (is_jal) {    // jal
-        instruction->signals.aluop  = -1;
+        instruction->signals.aluop  = INV;
         instruction->signals.mw     = 0;
         instruction->signals.mr     = -1;
         instruction->signals.mtr    = 0;
@@ -260,18 +271,17 @@ void decode(InstInfo *instruction)
     // Set the data up for executing
     switch (getFormat(instruction)) {
         case (R_format) :
-            instruction->input1  = instruction->fields.rs;
-            instruction->s1data  = regfile[instruction->fields.rs];
-            instruction->input2  = instruction->fields.rt;
-            instruction->s2data  = regfile[instruction->fields.rt];
-            instruction->destreg = instruction->fields.rd;
+            instruction->input1  = instruction->fields.rt;
+            instruction->s1data  = regfile[instruction->fields.rt];
+            instruction->input2  = instruction->fields.rd;
+            instruction->s2data  = regfile[instruction->fields.rd];
+            instruction->destreg = instruction->fields.rs;
             // printf("R FORMAT\n");
             break;
         case (I_format) :
-            instruction->input1  = instruction->fields.rs;
-            instruction->s1data  = regfile[instruction->fields.rs];
-            instruction->input2  = instruction->fields.rt;
-            instruction->s2data  = regfile[instruction->fields.rt];
+            instruction->input1  = instruction->fields.rt;
+            instruction->s1data  = regfile[instruction->fields.rt];
+            instruction->destreg = instruction->fields.rs;
             // printf("I FORMAT\n");
             break;
 
@@ -286,7 +296,39 @@ void decode(InstInfo *instruction)
 
 void execute(InstInfo *instruction)
 {
+<<<<<<< HEAD
 	
+=======
+    int in1 = instruction->s1data;
+    int in2 = (getFormat(instruction) == I_format) ? instruction->fields.imm : 
+                                                     instruction->s2data;
+    switch (instruction->signals.aluop) {
+        case INV:
+            break;      // Don't do anything
+        case AND:
+            instruction->aluout = in1 & in2;
+            //printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
+            break;
+        case OR:
+            instruction->aluout = in1 | in2;
+            break;
+        case ADD:
+            instruction->aluout = in1 + in2;
+            break;
+        case SUB:
+            instruction->aluout = in1 - in2;
+            break;
+        case NOT:
+            instruction->aluout = ! in1; // TODO: Check correctness
+            break;
+        case XOR:
+            instruction->aluout = in1 ^ in2;
+            break;
+        case SLT:
+            instruction->aluout = in1 < in2;
+            break;
+    }
+>>>>>>> ed462131839cfdd3740a3e43f429477f0bd77be1
 }
 
 /* memory

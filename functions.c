@@ -205,7 +205,7 @@ void decode(InstInfo *instruction)
 		instruction->signals.btype  = 00;
 		instruction->signals.rdst   = -1;
 		instruction->signals.rw     = 0;
-		sprintf(instruction->string,"lw $%d, %d($%d)",
+		sprintf(instruction->string,"lw $%d, %d ($%d)",
 			instruction->fields.rt, instruction->fields.imm, 
 			instruction->fields.rs);
 	} else if (is_sw) { 	// sw
@@ -217,7 +217,7 @@ void decode(InstInfo *instruction)
 		instruction->signals.btype  = 00;
 		instruction->signals.rdst   = -1;
 		instruction->signals.rw     = 0;
-		sprintf(instruction->string,"sw $%d, %d($%d)",
+		sprintf(instruction->string,"sw $%d, %d ($%d)",
 			instruction->fields.rt, instruction->fields.imm, 
 			instruction->fields.rs);
 	} else if (is_bge) {    // bge
@@ -229,7 +229,7 @@ void decode(InstInfo *instruction)
 		instruction->signals.btype  = 10;
 		instruction->signals.rdst   = -1;
 		instruction->signals.rw     = 0;
-		sprintf(instruction->string,"bge $%d, %d, $%d",
+		sprintf(instruction->string,"bge $%d, $%d, %d",
 			instruction->fields.rs, instruction->fields.rt, 
 			instruction->fields.imm);
 	} else if (is_j) {      // j
@@ -286,7 +286,7 @@ void decode(InstInfo *instruction)
 
 void execute(InstInfo *instruction)
 {
-
+	
 }
 
 /* memory
@@ -295,7 +295,7 @@ void execute(InstInfo *instruction)
  */
 void memory(InstInfo *instruction)
 {
-
+	
 }
 
 /* writeback
@@ -304,5 +304,32 @@ void memory(InstInfo *instruction)
  */
 void writeback(InstInfo *instruction)
 {
-}
+	if (is_add) {
+		regfile[instruction->fields.rd] = regfile[instruction->fields.rs] + regfile[instruction->fields.rt];	
+	}
+	else if (is_subi) {			
+		regfile[instruction->fields.rt] = regfile[instruction->fields.rs] - instruction->fields.imm;	
+	}
+	else if (is_or) {
+		regfile[instruction->destreg] = regfile[instruction->fields.rs] | regfile[instruction->fields.rt];	
+	}
+	else if (is_xor) {
+		regfile[instruction->destreg] = regfile[instruction->fields.rs] ^ regfile[instruction->fields.rt];	
+	}
+	else if (is_slt) {
+		regfile[instruction->destreg] = regfile[instruction->fields.rs] < regfile[instruction->fields.rt];	
+	}
+	else if (is_lw) {
+		instruction->destreg = instruction->fields.rt;
+		regfile[instruction->destreg] = datamem[regfile[instruction->fields.rs] + instruction->fields.imm];
+	}
+	else if (is_jal) {
+		instruction->destreg = 31;
+		regfile[31] = pc++;
+	} else { //instructions that don't write to reg's
+		instruction->destreg = -1;	 	
+	
+	}
 
+}
+	

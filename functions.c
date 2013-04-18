@@ -102,9 +102,22 @@ int load(char *filename)
 void fetch(InstInfo *instruction)
 {
     instruction->inst = instmem[pc];        // Fill in the inst field
-    pc++;                                   // Update the program counter
+   // if (instruction->signals.btype == 10 || instruction->signals.btype == 01) {
+//	setPCWithInfo(instruction->signals.btype, instruction->signals.aluop, instruction->fields.imm);
+  // } else { 	
+        pc++; //update program counter
+   //} 
 }
-
+/*
+void setPCWithInfo(int branchcontrol, int negativebit, int jumpaddress) {
+    if (is_bge || is_j) {
+	pc = jumpaddress;
+    }
+    //if (is_jal) {
+//	pc = jumpaddress;
+//	regfile[31] = 
+   // }
+}*/
 /* decode
  *
  * This decodes an instruction.  It looks at the inst field of the 
@@ -347,10 +360,9 @@ void memory(InstInfo *instruction)
 	}
     
     // Does the instruction write memory?
-    //if (instruction->signals.mw == 1) {
-    //    datamem[
-
-			
+    if (instruction->signals.mw == 1) {
+        datamem[instruction->aluout] = regfile[instruction->fields.rt];
+    }			
 }
 
 /* writeback
@@ -359,7 +371,6 @@ void memory(InstInfo *instruction)
  */
 void writeback(InstInfo *instruction)
 {
-<<<<<<< HEAD
 	if (getFormat(instruction) == R_format) {  
 		instruction->destdata = instruction->aluout;
 		regfile[instruction->fields.rd] = instruction->aluout;	
@@ -375,13 +386,11 @@ void writeback(InstInfo *instruction)
 			regfile[instruction->destreg] = instruction->memout;
 		}
 	}
-=======
     if (instruction->signals.rw) {  // Register is supposeed to be written
         regfile[instruction->fields.rd] = instruction->aluout;
     }
 
     /*
->>>>>>> 344ac7a13d2305ca81ddf24266c896033a5ac4e0
 	else if (is_jal) {
 		instruction->destreg = 31;
 		regfile[31] = pc++;

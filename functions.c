@@ -29,6 +29,9 @@ int datamem[1000];
 // program counter
 int pc;
 
+// Return Address
+int ra;
+
 typedef enum { R_format = 1, I_format = 2, J_format = 3 } InstFormat;
 // 000 = and, 100 = or, 001 = add, 101 = sub, 010 = not, 011 = xor, 110 = slt
 typedef enum {  INV = -1 ,
@@ -41,6 +44,8 @@ typedef enum {  INV = -1 ,
                 SLT = 110          
              } ALUOps;
 
+typedef enum {  BGE = 1, JAL = 2, J = 3 } Jumps;
+
 // Returns the format of the given instruction
 // Note that the unused registers in the instruction
 // MUST be set to -1 for the function to work!
@@ -51,7 +56,6 @@ InstFormat getFormat (InstInfo *instruction) {
                 return R_format;
             else
                 return I_format;
-        
         } else {
             // The setting up of the registers has failed, either the opcode is very wrong or the simulator is incorrect
             fprintf(stderr, "ERROR: Invalid Instruction %d\n", instruction->inst);
@@ -59,6 +63,22 @@ InstFormat getFormat (InstInfo *instruction) {
         }
     } else {
         return J_format;
+    }
+}
+
+void setPCWithInfo(Jumps jump, int aluout, int jsize) {
+    switch (jump) {
+        case BGE:
+            if (aluout >= 0)  // Branch
+                pc += jsize;
+            break;
+        case JAL:
+            ra = pc;
+            pc = jsize;
+            break;
+        case J:
+            pc = jsize;
+            break;
     }
 }
 
@@ -86,7 +106,6 @@ int load(char *filename)
             line[i] = c;
         }
         line[i] = '\0';
-
         instmem[maxpc] = atoi(line);
     }
     fclose(fin);
@@ -101,22 +120,9 @@ int load(char *filename)
 void fetch(InstInfo *instruction)
 {
     instruction->inst = instmem[pc];        // Fill in the inst field
-   // if (instruction->signals.btype == 10 || instruction->signals.btype == 01) {
-//	setPCWithInfo(instruction->signals.btype, instruction->signals.aluop, instruction->fields.imm);
-  // } else { 	
-        pc++; //update program counter
-   //} 
+    pc++; //update program counter
 }
-/*
-void setPCWithInfo(int branchcontrol, int negativebit, int jumpaddress) {
-    if (is_bge || is_j) {
-	pc = jumpaddress;
-    }
-    //if (is_jal) {
-//	pc = jumpaddress;
-//	regfile[31] = 
-   // }
-}*/
+
 /* decode
  *
  * This decodes an instruction.  It looks at the inst field of the 
@@ -130,7 +136,7 @@ void decode(InstInfo *instruction)
 {
 	// fill in the signals and fields
 	int val = instruction->inst;
-	int op, func;
+	//int op, func;
 
 	instruction->fields.op      = (val >> 26) & 0x03f;
 	instruction->fields.func    = val & 0x03f;		
@@ -156,7 +162,7 @@ void decode(InstInfo *instruction)
         // Instruction is of the J-Format
 		instruction->fields.rs  = -1;
 		instruction->fields.rt  = -1;
-    	}
+    }
 
 	// now fill in the signals
 	if (is_add) {           // add
@@ -205,57 +211,57 @@ void decode(InstInfo *instruction)
 		instruction->signals.rdst   = 1;
 		instruction->signals.rw     = 1;
 		sprintf(instruction->string,"xor $%d, $%d, $%d",
-			instruction->fields.rd, instruction->fields.rs, 
-			instruction->fields.rt);
-	} else if (is_slt) {    // slt
-		instruction->signals.aluop  = SLT;
-		instruction->signals.mw     = 0;
-		instruction->signals.mr     = 0;
-		instruction->signals.mtr    = 0;
-		instruction->signals.asrc   = 0;
-		instruction->signals.btype  = 00;
-		instruction->signals.rdst   = 1;
-		instruction->signals.rw     = 1;
-		sprintf(instruction->string,"slt $%d, $%d, $%d",
-			instruction->fields.rd, instruction->fields.rs, 
-			instruction->fields.rt);
-	} else if (is_lw) {     // lw
-		instruction->signals.aluop  = ADD;
-		instruction->signals.mw     = 0;
-		instruction->signals.mr     = 1;
-		instruction->signals.mtr    = 1;
-		instruction->signals.asrc   = 1;
-		instruction->signals.btype  = 00;
-		instruction->signals.rdst   = -1;
-		instruction->signals.rw     = 0;
-		sprintf(instruction->string,"lw $%d, %d ($%d)",
-			instruction->fields.rt, instruction->fields.imm, 
-			instruction->fields.rs);
-	} else if (is_sw) { 	// sw
-		instruction->signals.aluop  = ADD;
-		instruction->signals.mw     = 1;
-		instruction->signals.mr     = -1;
-		instruction->signals.mtr    = 0;
-		instruction->signals.asrc   = 1;
-		instruction->signals.btype  = 00;
-		instruction->signals.rdst   = -1;
-		instruction->signals.rw     = 0;
-		sprintf(instruction->string,"sw $%d, %d ($%d)",
-			instruction->fields.rt, instruction->fields.imm, 
-			instruction->fields.rs);
-	} else if (is_bge) {    // bge
-		instruction->signals.aluop  = SUB;
-		instruction->signals.mw     = 0;
-		instruction->signals.mr     = -1;
-		instruction->signals.mtr    = 0;
-		instruction->signals.asrc   = 0;
-		instruction->signals.btype  = 10;
-		instruction->signals.rdst   = -1;
-		instruction->signals.rw     = 0;
-		sprintf(instruction->string,"bge $%d, $%d, %d",
-			instruction->fields.rs, instruction->fields.rt, 
-			instruction->fields.imm);
-	} else if (is_j) {      // j
+                instruction->fields.rd, instruction->fields.rs, 
+                instruction->fields.rt);
+    } else if (is_slt) {    // slt
+        instruction->signals.aluop  = SLT;
+        instruction->signals.mw     = 0;
+        instruction->signals.mr     = 0;
+        instruction->signals.mtr    = 0;
+        instruction->signals.asrc   = 0;
+        instruction->signals.btype  = 00;
+        instruction->signals.rdst   = 1;
+        instruction->signals.rw     = 1;
+        sprintf(instruction->string,"slt $%d, $%d, $%d",
+                instruction->fields.rd, instruction->fields.rs, 
+                instruction->fields.rt);
+    } else if (is_lw) {     // lw
+        instruction->signals.aluop  = ADD;
+        instruction->signals.mw     = 0;
+        instruction->signals.mr     = 1;
+        instruction->signals.mtr    = 1;
+        instruction->signals.asrc   = 1;
+        instruction->signals.btype  = 00;
+        instruction->signals.rdst   = -1;
+        instruction->signals.rw     = 0;
+        sprintf(instruction->string,"lw $%d, %d ($%d)",
+                instruction->fields.rt, instruction->fields.imm, 
+                instruction->fields.rs);
+    } else if (is_sw) { 	// sw
+        instruction->signals.aluop  = ADD;
+        instruction->signals.mw     = 1;
+        instruction->signals.mr     = -1;
+        instruction->signals.mtr    = 0;
+        instruction->signals.asrc   = 1;
+        instruction->signals.btype  = 00;
+        instruction->signals.rdst   = -1;
+        instruction->signals.rw     = 0;
+        sprintf(instruction->string,"sw $%d, %d ($%d)",
+                instruction->fields.rt, instruction->fields.imm, 
+                instruction->fields.rs);
+    } else if (is_bge) {    // bge
+        instruction->signals.aluop  = SUB;
+        instruction->signals.mw     = 0;
+        instruction->signals.mr     = -1;
+        instruction->signals.mtr    = 0;
+        instruction->signals.asrc   = 0;
+        instruction->signals.btype  = 10;
+        instruction->signals.rdst   = -1;
+        instruction->signals.rw     = 0;
+        sprintf(instruction->string,"bge $%d, $%d, %d",
+                instruction->fields.rs, instruction->fields.rt, 
+                instruction->fields.imm);
+    } else if (is_j) {      // j
         instruction->signals.aluop  = INV;
         instruction->signals.mw     = 0;
         instruction->signals.mr     = -1;
@@ -266,7 +272,7 @@ void decode(InstInfo *instruction)
         instruction->signals.rw     = 0;
         sprintf(instruction->string,"j %d",
                 instruction->fields.imm);
-    	} else if (is_jal) {    // jal
+    } else if (is_jal) {    // jal
         instruction->signals.aluop  = INV;
         instruction->signals.mw     = 0;
         instruction->signals.mr     = -1;
@@ -274,10 +280,10 @@ void decode(InstInfo *instruction)
         instruction->signals.asrc   = -1;
         instruction->signals.btype  = 01;
         instruction->signals.rdst   = -1;
-        instruction->signals.rw     = 1;
+        instruction->signals.rw     = 0;    // Register does not need to be written
         sprintf(instruction->string,"jal %d",
                 instruction->fields.imm);
-    	}
+    }
 
 	// fill in s1data and input2
     // Set the data up for executing
@@ -288,14 +294,12 @@ void decode(InstInfo *instruction)
             instruction->input2  = instruction->fields.rt;
             instruction->s2data  = regfile[instruction->fields.rt];
             instruction->destreg = instruction->fields.rd;
-            // printf("R FORMAT\n");
             break;
         case (I_format) :
             instruction->input1  = instruction->fields.rs;
             instruction->s1data  = regfile[instruction->fields.rs];
             instruction->s2data  = regfile[instruction->fields.rt];
             instruction->destreg = instruction->fields.rt;
-            // printf("I FORMAT\n");
             break;
 
         // No need to do anything for J_format instructions
@@ -313,42 +317,37 @@ void execute(InstInfo *instruction)
     int in2 = (getFormat(instruction) == I_format) ? instruction->fields.imm : 
                                                      instruction->s2data;
     switch (instruction->signals.aluop) {
-        case INV:
-	    printf("PC1 = %d\n", pc);
-	    pc += instruction->aluout;
-	    printf("PC = %d\n", pc);
+        case INV:   // j or jal
             break;      // Don't do anything
         case AND:
             instruction->aluout = in1 & in2;
-            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
+            // printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case OR:
             instruction->aluout = in1 | in2;
-            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case ADD:
             instruction->aluout = in1 + in2;
-            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case SUB:
             instruction->aluout = in1 - in2;
-            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case NOT:
-            instruction->aluout = ~in1; // Changed from !in1
-            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
+            instruction->aluout = ~in1;
             break;
         case XOR:
             instruction->aluout = in1 ^ in2;
-            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break;
         case SLT:
             instruction->aluout = in1 < in2;
-            printf("ALUOUT = %d s1 = %d s2 = %d\n", instruction->aluout, in1, in2);
             break; 
     }
     instruction->destdata = instruction->aluout;
-
+    
+    // TODO: do the following using btype
+    if (is_bge)         setPCWithInfo(BGE, instruction->aluout, instruction->fields.imm);
+    else if (is_jal)    setPCWithInfo(JAL, instruction->aluout, instruction->fields.imm);
+    else if (is_j)      setPCWithInfo(J,   instruction->aluout, instruction->fields.imm);
 }
 
 /* memory
@@ -374,43 +373,13 @@ void memory(InstInfo *instruction)
  */
 void writeback(InstInfo *instruction)
 {
-<<<<<<< HEAD
-	if (getFormat(instruction) == R_format) {  
-		instruction->destdata = instruction->aluout;
-		regfile[instruction->fields.rd] = instruction->aluout;	
-		}	
-	else if (getFormat(instruction) == I_format) {
-		if (is_subi) {
-			instruction->destdata = instruction->aluout;			
-			regfile[instruction->fields.rt] = instruction->aluout;	
-		}
-		if (is_lw) {
-			instruction->destdata = instruction->memout;
-			instruction->destreg = instruction->fields.rt;
-			regfile[instruction->destreg] = instruction->memout;
-		}
-	}
-=======
     instruction->destreg = (instruction->signals.rdst == 1) ? instruction->fields.rd :
                             (instruction->signals.rdst == 0) ? instruction->fields.rt :
                               -1;
->>>>>>> d9ef4c55144769b868c5bf5c63d6786e94ce62b8
-    if (instruction->signals.rw) {  // Register is supposeed to be written
+    if (instruction->signals.rw == 1) {  // Register is supposeed to be written
         if (instruction->destreg == -1) printf("ERROR in the simulator!\n"), exit(-1); // Total comma hack
         regfile[instruction->destreg] = instruction->aluout;
     }
 
-    /*
-<<<<<<< HEAD
-	else if (is_jal) {
-=======
->>>>>>> d9ef4c55144769b868c5bf5c63d6786e94ce62b8
-		instruction->destreg = 31;
-		regfile[31] = pc++;
-	} else { //instructions that don't write to reg's
-		instruction->destreg = -1; //??? 	
-	
-	}
-    */
 }
 	

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
-#include "functions.h"
+#include "functions.c"
 
 // TODO: Make a Makefile for the project 
 

@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -365,13 +364,8 @@ void memory(InstInfo *instruction)
     
     // Does the instruction write memory?
     if (instruction->signals.mw == 1) {
-<<<<<<< HEAD
-        datamem[instruction->aluout] = regfile[instruction->fields.rt];
-    }			
-=======
         datamem[instruction->aluout] = instruction->s2data;
     }
->>>>>>> d9ef4c55144769b868c5bf5c63d6786e94ce62b8
 }
 
 /* writeback

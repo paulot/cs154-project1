@@ -46,24 +46,10 @@ typedef enum {  INV = -1 ,
 
 typedef enum {  BGE = 1, JAL = 2, J = 3 } Jumps;
 
-// Returns the format of the given instruction
-// Note that the unused registers in the instruction
-// MUST be set to -1 for the function to work!
 InstFormat getFormat (InstInfo *instruction) {
-    if (instruction->fields.rs != -1) {
-        if (instruction->fields.rt != -1) {
-            if (instruction->fields.rd != -1)
-                return R_format;
-            else
-                return I_format;
-        } else {
-            // The setting up of the registers has failed, either the opcode is very wrong or the simulator is incorrect
-            fprintf(stderr, "ERROR: Invalid Instruction %d\n", instruction->inst);
-            exit(-1);
-        }
-    } else {
-        return J_format;
-    }
+    if (is_jal || is_j) return J_format;
+    else if (is_subi || is_bge || is_lw || is_sw) return I_format;
+    else return R_format;
 }
 
 void setPCWithInfo(Jumps jump, int aluout, int jsize) {
@@ -136,7 +122,6 @@ void decode(InstInfo *instruction)
 {
 	// fill in the signals and fields
 	int val = instruction->inst;
-	//int op, func;
 
 	instruction->fields.op      = (val >> 26) & 0x03f;
 	instruction->fields.func    = val & 0x03f;		
@@ -148,11 +133,9 @@ void decode(InstInfo *instruction)
 	} else if (instruction->fields.func == 36 || instruction->fields.func == 34) { 
         // Intruction with no rd
 		instruction->fields.imm = val & 0x03ffffff;
-		instruction->fields.rd  = -1;
 	} else {
         // Intruction with no rd 
 		instruction->fields.imm = val & 0x0ffff;
-		instruction->fields.rd  = -1;
 	}
 
 	if (instruction->fields.func != 36 && instruction->fields.func != 34) {
@@ -160,8 +143,6 @@ void decode(InstInfo *instruction)
 		instruction->fields.rt  = (val >> 16) & 0x01f;
 	} else {
         // Instruction is of the J-Format
-		instruction->fields.rs  = -1;
-		instruction->fields.rt  = -1;
     }
 
 	// now fill in the signals

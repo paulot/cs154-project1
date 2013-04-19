@@ -1,3 +1,8 @@
+// Made by:
+// Paulo Tanaka       paulo.tanaka3@gmail.com
+// Methias Talamantes oneoverone_t@live.com
+// Danny Wong         dworeo@facebook.com
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>

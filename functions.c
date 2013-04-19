@@ -69,11 +69,11 @@ InstFormat getFormat (InstInfo *instruction) {
 void setPCWithInfo(Jumps jump, int aluout, int jsize) {
     switch (jump) {
         case BGE:
-            if (aluout >= 0)  // Branch
+            if (aluout >= 0)    // Branch
                 pc += jsize;
             break;
         case JAL:
-            ra = pc;
+            regfile[31] = pc;   // Set the return address
             pc = jsize;
             break;
         case J:

@@ -186,7 +186,7 @@ void decode(InstInfo *instruction)
 		instruction->signals.btype  = 00;
 		instruction->signals.rdst   = 0;
 		instruction->signals.rw     = 1;
-		sprintf(instruction->string,"subi $%d, $%d,  %d",
+		sprintf(instruction->string,"subi $%d, $%d, %d",
 			instruction->fields.rt, instruction->fields.rs, 
 			instruction->fields.imm);
 	} else if (is_or) {     // or

@@ -383,7 +383,10 @@ void writeback(InstInfo *instruction)
                               -1;*/
     if (instruction->signals.rw == 1) {  // Register is supposeed to be written
         if (instruction->destreg == -1) printf("ERROR in the simulator!\n"), exit(-1); // Total comma hack
-        regfile[instruction->destreg] = instruction->aluout;
+        if (instruction->signals.mtr == 0) 
+            regfile[instruction->destreg] = instruction->aluout;
+        else if (instruction->signals.mtr == 1)
+            regfile[instruction->destreg] = instruction->memout;
     }
 
 }

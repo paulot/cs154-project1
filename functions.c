@@ -129,40 +129,11 @@ void decode(InstInfo *instruction)
 	int val = instruction->inst;
 
 	instruction->fields.op      = (val >> 26) & 0x03f;
-	//instruction->fields.func    = val & 0x03f;		
-
-	/*if (instruction->fields.op == 48) {
-        // Intruction with no imm
-		instruction->fields.rd  = (val >> 11) &  0x01f;
-		instruction->fields.imm = 0;
-	} else if (instruction->fields.func == 36 || instruction->fields.func == 34) { 
-        // Intruction with no rd
-		instruction->fields.imm = val & 0x03ffffff;
-		instruction->fields.rd = 0;
-	} else {
-        // Intruction with no rd 
-		instruction->fields.imm = val & 0x0ffff;
-		instruction->fields.rd = 0;
-	}
-
-	if (instruction->fields.func != 36 && instruction->fields.func != 34) {
-		instruction->fields.rs  = (val >> 21) & 0x01f;
-		instruction->fields.rt  = (val >> 16) & 0x01f;
-	} else {
-        // Instruction is of the J-Format
-    }*/
-	//if (instruction->fields.op == 48) { //R-format
-		instruction->fields.rs = (val >> 21) & 0x01f;
-		instruction->fields.rt = (val >> 16) & 0x01f;		
-		instruction->fields.rd = (val >> 11) & 0x01f;
-		instruction->fields.func    = val & 0x03f;
-	//}
-	//if (instruction->fields.func == 36 || instruction->fields.func == 34) 
-		instruction->fields.imm = (((val & 0xffff) << 16) >> 16);
-	//else
-		//instruction->fields.imm = val & 0x0ffff;
-
-	
+    instruction->fields.rs      = (val >> 21) & 0x01f;
+    instruction->fields.rt      = (val >> 16) & 0x01f;		
+    instruction->fields.rd      = (val >> 11) & 0x01f;
+    instruction->fields.func    = val & 0x03f;
+    instruction->fields.imm     = (((val & 0xffff) << 16) >> 16);
 
 
 	// now fill in the signals
@@ -301,10 +272,6 @@ void decode(InstInfo *instruction)
             instruction->s1data  = regfile[instruction->fields.rs];
             instruction->s2data  = regfile[instruction->fields.rt];
             instruction->destreg = instruction->fields.rt;
-	    //if ((val >> 15) == 1) {
-	//	instruction->fields.imm = instruction->fields.imm | 0xffff0000;
-	  //  }  
-		//printf("IMMEDIATE VALUE IS: %d\n", instruction->fields.imm);
             break;
 	
         // No need to do anything for J_format instructions
@@ -321,6 +288,9 @@ void execute(InstInfo *instruction)
     int in1 = instruction->s1data;
     int in2 = (getFormat(instruction) == I_format) ? instruction->fields.imm : 
                                                      instruction->s2data;
+    if (is_bge)
+        in2 = instruction->s2data;
+
     switch (instruction->signals.aluop) {
         case INV:   // j or jal
             break;      // Don't do anything
@@ -363,12 +333,12 @@ void memory(InstInfo *instruction)
 {
     // Does the instruction read memory?
     if (instruction->signals.mr == 1) {
-		instruction->memout = datamem[instruction->aluout];
+		instruction->memout = datamem[instruction->aluout / 4];
 	}
     
     // Does the instruction write memory?
     if (instruction->signals.mw == 1) {
-        datamem[instruction->aluout] = instruction->s2data;
+        datamem[instruction->aluout / 4] = instruction->s2data;
     }
 }
 
